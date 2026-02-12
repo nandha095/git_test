@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.models import LoginRequest, TokenResponse, User
+import re
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -22,7 +23,19 @@ def login(request: LoginRequest):
         
     Returns:
         TokenResponse with access token
+        
+    Raises:
+        HTTPException: If email is invalid or credentials are wrong
     """
+    # Validate email format
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, request.email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+    
+    # Validate password is not empty
+    if not request.password or len(request.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
     user = users_db.get(request.email)
     
     if not user:
